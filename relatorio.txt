@@ -1,0 +1,66 @@
+Relatório: Simulação de Kernel e Interrupções
+
+1. Introdução
+
+O projeto consiste na simulação de um kernel (KernelSim) que gerencia múltiplas aplicações e recebe interrupções de um controlador externo (InterControllerSim). O objetivo é alternar entre as aplicações com base em interrupções de tempo de fatia e I/O simuladas, garantindo a execução controlada de três aplicações.
+
+2. Programas que Fazem Parte do Trabalho
+
+- KernelSim: Gerencia as aplicações (A1, A2, A3), alternando entre elas com base nas interrupções enviadas pelo InterControllerSim. Monitora o estado das aplicações e encerra após a conclusão de todas.
+
+- InterControllerSim: Responsável por gerar interrupções (IRQ0 para fatia de tempo, IRQ1 e IRQ2 para simular I/O). As interrupções são enviadas ao KernelSim usando pipes, que garantem uma comunicação robusta entre os processos.
+
+- Testes (test_sim.sh): Um script de teste foi incluído para verificar o comportamento da simulação, compilando os programas, executando-os em paralelo, e analisando os logs para garantir o comportamento esperado.
+
+3. Dificuldades Encontradas
+
+3.1 Diferenças entre Intel x86-64 e ARM64 (Apple Silicon)
+
+Durante a execução no macOS com Apple Silicon (ARM64), foram observadas dificuldades no uso de sinais para a comunicação entre o KernelSim e o InterControllerSim. Enquanto na arquitetura Intel x86-64 o sistema funcionava corretamente, no ARM64 o uso de sinais resultava em crashes inesperados e comportamento inconsistente.
+
+3.2 Uso de Pipes em Vez de Sinais
+
+Para resolver o problema de instabilidade com sinais no ARM64, foram implementados pipes para a comunicação interprocessual. A troca para pipes permitiu uma comunicação robusta e eliminou os problemas de crashes, garantindo que as interrupções fossem enviadas e processadas corretamente, tanto no Intel quanto no ARM64.
+
+3.3 Integração entre KernelSim e InterControllerSim
+
+Foi necessário garantir que o InterControllerSim parasse de enviar interrupções após a conclusão de todas as aplicações. Um controle foi implementado no KernelSim para detectar o encerramento das aplicações e notificar o InterControllerSim para interromper o envio de sinais. Este ajuste resolveu o problema de sinais sendo enviados após a conclusão das aplicações.
+
+4. Testes Realizados
+
+Os testes foram realizados usando o script test_sim.sh, que:
+1. Compilou e executou o KernelSim e o InterControllerSim.
+2. Verificou a alternância correta entre as aplicações, o envio de interrupções e a finalização de todas as aplicações.
+3. Garantiu que o InterControllerSim parasse o envio de interrupções após o encerramento das aplicações no KernelSim.
+
+Os testes confirmaram que o sistema funcionou corretamente em ambas as arquiteturas (Intel e ARM64), com a troca de sinais por pipes garantindo a robustez necessária.
+
+5. Conclusão
+
+O projeto atingiu seus objetivos, com o KernelSim gerenciando múltiplas aplicações e alternando entre elas com base nas interrupções recebidas do InterControllerSim. As dificuldades encontradas, especialmente nas diferenças entre arquiteturas, foram superadas com a implementação de pipes, garantindo o comportamento estável e correto da simulação.
+
+6. Evidência dos testes feitos através do script incluído: 
+
+doliveira@ATGRJ-QA-N05:/mnt/c/Users/doliveira/Desktop/T01$ date && ./test_sim.sh
+Fri Oct 11 15:36:39 -03 2024
+Compilando KernelSim e InterControllerSim...
+Iniciando testes...
+KernelSim: Aplicação A1 terminou.
+KernelSim: Iniciando aplicação A2
+KernelSim: Iniciando aplicação A2
+KernelSim: Aplicação A3 terminou.
+0InterControllerSim: Enviando IRQ0 (time slice)
+0InterControllerSim: Enviando IRQ0 (time slice)
+0InterControllerSim: Enviando IRQ0 (time slice)
+0InterControllerSim: Enviando IRQ0 (time slice)
+0InterControllerSim: Enviando IRQ0 (time slice)
+0InterControllerSim: Enviando IRQ0 (time slice)
+0InterControllerSim: Enviando IRQ0 (time slice)
+0InterControllerSim: Enviando IRQ0 (time slice)
+0InterControllerSim: Enviando IRQ0 (time slice)
+InterControllerSim: Limite de IRQs atingido, interrompendo envio.
+KernelSim: O pipe foi fechado, encerrando KernelSim.
+0InterControllerSim: Enviando IRQ0 (time slice)
+InterControllerSim: Limite de IRQs atingido, interrompendo envio.
+Testes concluídos. Verifique os logs acima para evidenciar a alternância e o envio de interrupções.
+doliveira@ATGRJ-QA-N05:/mnt/c/Users/doliveira/Desktop/T01$
